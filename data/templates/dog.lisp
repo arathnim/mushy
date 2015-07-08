@@ -1,5 +1,5 @@
 ;; Dog template!
-(apply-template *this* '(quadruped))
+(apply-template *this* '(quadruped furred))
 
 (setq size (rand-element '("small" "large"))
 		color (rand-element '("brown" "black" "beige" "white")))
