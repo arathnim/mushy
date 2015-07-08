@@ -1,0 +1,5 @@
+Notes
+-=-=-=-=-=-=-=-=-=-=-=-=-
+weight is in kg
+density is in g/cm^3
+volumne is in cm^3
