@@ -4,6 +4,8 @@
 (ql:quickload "cl-store")
 (ql:quickload "alexandria")
 (declaim #+sbcl(sb-ext:muffle-conditions style-warning))
+(declaim #+sbcl(sb-ext:muffle-conditions warning))
+(proclaim '(optimize (speed 0) (safety 3) (debug 3) (space 0)))
 (asdf:load-system :mushy)
 (sb-thread:make-thread 'ticker :name "ticker")
 (sb-thread:make-thread 'start-server :name "server")

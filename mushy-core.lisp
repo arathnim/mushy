@@ -1,17 +1,18 @@
-(defclass *block () (
+(defclass obj () (
 	(sub-blocks :initform nil :accessor subs)
-	(attributes :initform nil :accessor attrs)
+	(attributes :initform (make-hash-table :test #'equalp) :accessor attrs)
 	(flags :initform nil :accessor flags)
 	(above :initform nil :accessor above)
-	(id :type 'integer :initform (incf *next-id*) :accessor id)))
+	(id :type fixnum :initform (incf *next-id*) :accessor id)))
 
-(defun attr (blk name) (cadr 
-	(assoc name (attrs blk) :test #'equalp)))
+(defun attr (blk name)
+	(gethash name (attrs blk)))
 
-(defun has-flag (blk flag) (find flag (flags blk)))
+(defun has-flag (blk flag)
+	(find flag (flags blk)))
 
 (defun push-attr (blk str sexp)
- 	(push (list str sexp) (attrs blk)))
+ 	(setf (gethash str (attrs blk)) sexp))
 
 (defun push-attrs (blk &rest list)
   (loop for x in list by #'cddr 
@@ -19,7 +20,7 @@
 		  do (push-attr blk x y)))
 
 (defun push-attr-list (blk list)
-  (loop for x in list by #'cddr 
+  (loop for x in list by #'cddr
 		  for y in (cdr list) by #'cddr
 		  do (push-attr blk x y)))
 
@@ -30,19 +31,15 @@
   (setf (above blk2) blk))
 
 (defun get-sub-names (blk)
-  (mapcar #'(lambda (x) (attr x "name")) (subs blk)))
-
-(defun make-exit (name blk target) 
-	(let ((exit (make-instance '*block))) 
-		(progn (push-flag exit 'exit) (push-attr exit "name" name)
-			(push-sub blk exit) exit)))
+  (mapcar (lambda (x) (attr x "name")) (subs blk)))
 
 (defun add-flagged-list (flag block-list &rest name-list)
 	(loop for b in block-list do 
 		(add-flagged-subs flag b name-list)))
 
 (defun add-part (flag blk name num)
-  (loop repeat num do (add-flagged-subs flag blk (list name))))
+  (loop repeat num do 
+  	(add-flagged-subs flag blk (list name))))
 
 (defun compound-find (list name)
 	(let ((tmp nil)) 
@@ -51,4 +48,4 @@
 		tmp))
 
 (defun push-to-attr (blk sexp name)
-	(push sexp (cadr (assoc name (slot-value blk 'attributes) :test #'equalp))))
+	(push sexp (gethash name (attrs blk))))

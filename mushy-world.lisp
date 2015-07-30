@@ -19,13 +19,13 @@
 	(loop for tmp in templates do 
 		(let ((data (read-all-lines (concatenate 'string "data/templates/" 
 			(string-downcase (string tmp)) ".lisp"))))
-			(mapc #'(lambda (x) (let-eval nil this x)) data))) nil)
+			(mapc (lambda (x) (let-eval nil this x)) data))) nil)
 
 (defun load-material (templates)
 	(loop for tmp in templates do 
 		(let ((data (read-all-lines tmp)) 
-			(mat (make-instance '*block)))
-			(mapc #'(lambda (x) (let-eval nil mat x)) data)
+			(mat (make-instance 'obj)))
+			(mapc (lambda (x) (let-eval nil mat x)) data)
 			(push mat *materials*))) nil)
 
 (defun read-all-lines (loc)
@@ -37,15 +37,18 @@
 		(close in)) msg))
 
 (defun make-wall (name blk) 
-	(let ((wall (make-instance '*block))) 
+	(let ((wall (make-instance 'obj))) 
 		(progn (push-flag wall 'wall) (push-attr wall "name" name)
 			(push-sub blk wall) (push-attr wall "vis" 2) wall)))
 
+(defun name (blk)
+	(attr blk "name"))
+
 (defun put-into (container target)
-	(cond 
-		((not (has-flag container 'container))
-			(return-from put-into "You can't put something into that!"))
-		(t "Sure, whatever.")))
+	(cond ((not (has-flag container 'container))
+			(return-from put-into "That's not a container!"))
+		(t (progn (push-sub container target)
+			(catstr "You place the " (name target) " into the " (name container) ".")))))
 
 (defun get-weight (blk)
 	(if (attr blk "weight")
@@ -55,7 +58,6 @@
 (defun get-density (blk)
 	(attr (attr blk "material") "density"))
 	
-
 (defun get-material (mat-name)
 	(find mat-name *materials* :test #'equalp :key #'(lambda (x) (attr x "name"))))
 
@@ -82,9 +84,17 @@
 		  (if (rfind-all-subs s name) (push (rfind-sub s name) res)))
  	res))
 
+(defun make-exit (name blk target)
+	(let ((exit (make-instance 'obj)))
+		(push-flag exit 'exit) 
+		(push-attr exit "name" name)
+		(push-sub blk exit)
+		(push-attr "target" target)
+		exit))
+
 (defun make-room ()
-	(let ((blk (make-instance '*block)))
-		(mapc #'(lambda (x) (make-wall x blk))
+	(let ((blk (make-instance 'obj)))
+		(mapc (lambda (x) (make-wall x blk))
 		'("west wall" "east wall" "north wall" "south wall" "floor" "ceiling")) 
 		(push-attr blk "desc" '(room-default-desc *caller* *this*)) 
 		(push blk *world*) blk))
@@ -98,11 +108,11 @@
 
 (defun add-subs (blk sub-names)
 	(mapcar #'(lambda (x) (push-sub blk (make-sys-blk 
-		(make-instance '*block) (string-capitalize x)))) sub-names))
+		(make-instance 'obj) (string-capitalize x)))) sub-names))
 
 (defun broadcast (msg room)
-	(loop for b in (subs room) do 
-		(send-msg msg b)))
+	(loop for b in (subs room) 
+		do (send-msg msg b)))
 
 (defun send-msg (msg blk)
 	(let ((socket (get-socket (attr blk "name"))))
@@ -128,7 +138,7 @@
 
 (defun push-parts-backend (blk flags sub-list attrs material)
 	(mapcar (lambda (x) 
-		(let ((sub (make-sys-blk (make-instance '*block) (string-capitalize x)))) 
+		(let ((sub (make-sys-blk (make-instance 'obj) (string-capitalize x)))) 
 			(push-sub blk sub)
 			(push-attr-list sub attrs)
 			(push-attr sub "material" (get-material (car material)))
@@ -168,10 +178,10 @@
 (defun make-test-world ()
 	(defparameter *tavern* (make-sys-blk (make-room) "the foyer of the tavern"))
 	(defparameter *porch* (make-sys-blk (make-room) "the porch of the tavern"))
-	(defparameter dog (make-sys-blk (make-instance '*block) "dog"))
-	(defparameter barmaid (make-sys-blk (make-instance '*block) "barmaid"))
-	(defparameter box (make-sys-blk (make-instance '*block) "box"))
-	(defparameter apple (make-sys-blk (make-instance '*block) "apple"))
+	(defparameter dog (make-sys-blk (make-instance 'obj) "dog"))
+	(defparameter barmaid (make-sys-blk (make-instance 'obj) "barmaid"))
+	(defparameter box (make-sys-blk (make-instance 'obj) "box"))
+	(defparameter apple (make-sys-blk (make-instance 'obj) "apple"))
 
 	(push-flag box 'container)
 	(push-attrs box
@@ -186,7 +196,8 @@
 	(push-attr barmaid "status" "washing glasses behind the bar")
 	
 	(push-flag *tavern* 'spawn)
-	(push-attr *tavern* "room-desc" "The inn is lit by a small fire in the hearth, casting a warm light over the various tables and chairs in the room.")
+	(push-attr *tavern* "room-desc" "The inn is lit by a small fire in the hearth, 
+		casting a warm light over the various tables and chairs in the room.")
 
 	(mapcar (lambda (x) (push-sub *tavern* x)) (list dog barmaid box apple))
 

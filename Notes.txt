@@ -3,3 +3,9 @@ Notes
 weight is in kg
 density is in g/cm^3
 volumne is in cm^3
+
+weather table is weather:biome:season:time
+	weather -> {rain,snow,sun,overcast,stormy}
+	biome -> {forest,savanna,alpine,desert,taiga,tundra,rainforest,grassland}
+	season -> {summer,winter,fall,spring}
+	time -> {dawn,day,dusk,night}
