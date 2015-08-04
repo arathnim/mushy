@@ -23,7 +23,7 @@
 
 (defun repl (socket name player)
   	(push (list name socket) *sockets*)
-	(loop (stream-print (format nil "~%~a"
+	(loop (stream-print (format nil "~%~a~%"
 		(mushy-eval (stream-read socket) player)) socket)))
 
 (defun login (socket cmd)
@@ -48,7 +48,7 @@
 
 (defun create (socket cmd)
   (let* ((username (cadr cmd)) (password (caddr cmd))
-	(player (make-sys-blk (make-instance '*block) username)))
+	(player (make-sys-blk (make-instance 'obj) username)))
 	 (push (list username password) *users*)
 	 (push (list username player) *players*)
 	 (push-sub *tavern* player)

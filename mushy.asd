@@ -7,6 +7,7 @@
 	:serial t
 	:components  
 		((:file "mushy-core")
+		(:file "mushy-softcode")
 		(:file "mushy-world")
 		(:file "mushy-control")
 		(:file "mushy-default-attrs")

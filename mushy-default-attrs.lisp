@@ -13,7 +13,7 @@
 	 "."))
 
 (defun room-default-desc (caller this)
-	(format nil "~a~%==========================~%~a ~{~a ~}~%" 
+	(format nil "~a~%==========================~%~a ~{~a ~}" 
 		(string-capitalize (attr this "name")) 
 		(attr this "room-desc")
 		(remove nil (gather-sdesc caller (subs this)))))

@@ -24,11 +24,17 @@
 		  for y in (cdr list) by #'cddr
 		  do (push-attr blk x y)))
 
-(defun push-flag (blk str) (push str (flags blk)))
+(defun push-flag (blk str)
+	(push str (flags blk)))
 
 (defun push-sub (blk blk2)
   (push blk2 (subs blk))
   (setf (above blk2) blk))
+
+(defun move-to (blk blk2)
+	(print `(,blk ,(above blk) ,(subs (above blk))))
+	(delete blk (subs (above blk)))
+	(push-sub blk2 blk))
 
 (defun get-sub-names (blk)
   (mapcar (lambda (x) (attr x "name")) (subs blk)))

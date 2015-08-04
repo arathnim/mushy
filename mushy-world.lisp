@@ -4,9 +4,6 @@
 (defvar *caller* nil)
 (defvar *this* nil)
 
-(defun let-eval (caller this sexp)
-  (let ((*caller* caller) (*this* this)) (eval sexp)))
-
 (defun load-world ()
 	(let ((vals (cl-store:restore "worlddata")))
 		(setq *world* (nth 0 vals) *next-id* (nth 1 vals) 
@@ -85,11 +82,10 @@
  	res))
 
 (defun make-exit (name blk target)
-	(let ((exit (make-instance 'obj)))
-		(push-flag exit 'exit) 
-		(push-attr exit "name" name)
+	(let ((exit (make-sys-blk (make-instance 'obj) name)))
+		(push-flag exit 'exit)
 		(push-sub blk exit)
-		(push-attr "target" target)
+		(push-attr exit "target" target)
 		exit))
 
 (defun make-room ()
@@ -163,11 +159,26 @@
 	(setq subs (alexandria:flatten subs))
 	(alexandria:flatten (mapcar #'(lambda (x) (rfind-sub blk x)) subs)))
 
+(defun bind-exit (name room room2)
+	(make-exit name room room2)
+	(make-exit name room2 room))
+
 (defun ticker ()
   (loop (progn (loop for r in *world* do (tick r)) (sleep 5))))
 
+(defun exec-attr (blk attr caller args)
+	(let ((env *default-env*))
+		(set-symbol '*this* blk env)
+		(set-symbol '*caller* caller env)
+		(set-symbol '*args* args env)
+ 		(soft-eval (attr blk attr) env)))
+
+(defun let-eval (caller this sexp)
+ 	(let ((*caller* caller) (*this* this)) (eval sexp)))
+
 (defun tick (blk)
-  (progn (xc-attr blk "tick" nil) (mapc #'tick (subs blk))))
+	(progn (if (attr blk "tick") (exec-attr blk "tick" nil nil)) 
+		(mapc #'tick (subs blk))))
 
 (defun catstr (&rest rest)
 	(format nil "~{~a~}" rest))
@@ -182,6 +193,7 @@
 	(defparameter barmaid (make-sys-blk (make-instance 'obj) "barmaid"))
 	(defparameter box (make-sys-blk (make-instance 'obj) "box"))
 	(defparameter apple (make-sys-blk (make-instance 'obj) "apple"))
+	(defparameter door (bind-exit "wooden-door" *tavern* *porch*))
 
 	(push-flag box 'container)
 	(push-attrs box
@@ -196,10 +208,8 @@
 	(push-attr barmaid "status" "washing glasses behind the bar")
 	
 	(push-flag *tavern* 'spawn)
-	(push-attr *tavern* "room-desc" "The inn is lit by a small fire in the hearth, 
-		casting a warm light over the various tables and chairs in the room.")
+	(push-attr *tavern* "room-desc" "The inn is lit by a small fire in the hearth, casting a warm light over the various tables and chairs in the room.")
 
 	(mapcar (lambda (x) (push-sub *tavern* x)) (list dog barmaid box apple))
 
-	(push-attr *porch* "room-desc" "You stand on the small wooden porch of the inn.")
-	nil)
+	(push-attr *porch* "room-desc" "You stand on the small wooden porch of the inn."))
