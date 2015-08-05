@@ -37,13 +37,17 @@
 
 ;; list functions
 (add-fun-list '(car cdr list list-length cons remove remove-if
-	delete delete-if))
+	delete delete-if map mapcar find))
 
 ;; strings and vectors
-(add-fun-list '(subseq char aref elt))
+(add-fun-list '(subseq char concatenate string-capitalize aref 
+	elt string-upcase string-downcase string-trim))
 (add-fun 'format (lambda (str &rest args)
 	(apply #'format (append (list nil str) 
 		(mapcar #'soft-eval args)))))
+(add-fun 'match 'cl-ppcre:all-matches-as-strings)
+(add-fun 'split 'cl-ppcre:split)
+(add-fun 'replace 'cl-ppcre:regex-replace-all)
 
 ;; mushy interface
 (add-fun-list '(attr has-flag push-attr push-attrs push-flag push-sub 
@@ -63,3 +67,7 @@
 	(lambda (args env)
 		(if (soft-eval (car args) env) (soft-eval (cadr args) env) 
 			(soft-eval (caddr args) env))))
+
+(add-special-form 'progn
+	(lambda (args env)
+		(car (last (mapcar (lambda (x) (soft-eval x env)) args)))))

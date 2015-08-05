@@ -10,5 +10,5 @@
 		(:file "mushy-softcode")
 		(:file "mushy-world")
 		(:file "mushy-control")
-		(:file "mushy-default-attrs")
+		(:file "mushy-commands")
 		(:file "mushy-server")))

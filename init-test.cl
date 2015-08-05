@@ -4,7 +4,7 @@
 (declaim #+sbcl(sb-ext:muffle-conditions warning))
 (setq *print-pretty* 'nil)
 (proclaim '(optimize (speed 0) (safety 3) (debug 3) (space 0)))
-;; reader macros
+;; reader macros, need to be evaluated before the system is loaded
 (defun single-quote-reader (stream char)
    (declare (ignore char))
    `(gethash ',(read stream t nil t) matched-symbols))

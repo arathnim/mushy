@@ -1,13 +1,20 @@
 Todo
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
-sublang
-	arithmetic
-	string manip
-	logic
-	regex
-	world interface (attr,etc.)
-	common macros/special forms (if,cond,case,let)
+[ ] sublang
+	[✓] arithmetic
+	[✓] string manip
+	[✓] logic
+	[✓] regex
+	[✓] world interface (attr,etc.)
+	[ ] common macros/special forms (if,cond,case,let)
 
-command definition
-helpfiles
+[ ] command definition
+	[✓] syntax
+	[✓] dispatcher
+	[ ] port old commands
+	[ ] defalias
+	[ ] nested modifiers
+	
+[ ] helpfiles
+[ ] command permissions

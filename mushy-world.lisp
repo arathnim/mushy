@@ -73,6 +73,33 @@
 		  (if (rfind-sub s name) (setq res (rfind-sub s name))))
  	res))
 
+(defun build-object-string (blk)
+  (if (eql (attr blk "vis") 0) 
+	 (format nil "You see ~a~a" (build-name blk) (build-status blk)) ""))
+
+(defun build-name (blk)
+  (if (has-flag blk 'proper-name) 
+	 (attr blk "name")
+	 (format nil "a ~a" (attr blk "name"))))
+
+(defun build-status (blk)
+  (if (attr blk "status")
+	 (format nil ", ~a." (attr blk "status"))
+	 "."))
+
+(defun room-default-desc (caller this)
+	(format nil "~a~%==========================~%~a ~{~a ~}" 
+		(string-capitalize (attr this "name")) 
+		(attr this "room-desc")
+		(remove nil (gather-sdesc caller (subs this)))))
+
+(defun gather-sdesc (caller subs)
+	(loop for s in subs collect 
+		(let-eval caller s (attr s "sdesc"))))
+
+(defun object-default-sdesc (caller this)
+  (build-object-string this))
+
 (defun rfind-all-subs (blk name)
 	(let ((res nil))
 		(if (equalp name (attr blk "name"))
@@ -167,11 +194,13 @@
   (loop (progn (loop for r in *world* do (tick r)) (sleep 5))))
 
 (defun exec-attr (blk attr caller args)
+	(if (attr blk attr)
 	(let ((env *default-env*))
 		(set-symbol '*this* blk env)
 		(set-symbol '*caller* caller env)
 		(set-symbol '*args* args env)
  		(soft-eval (attr blk attr) env)))
+		"No such attribute!  Go yell at Arathnim!")
 
 (defun let-eval (caller this sexp)
  	(let ((*caller* caller) (*this* this)) (eval sexp)))
