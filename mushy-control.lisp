@@ -3,7 +3,7 @@
 (defun defcommand (head &rest forms)
 	(push (list head forms) *commands*))
 
-;; WARNING! Psychotic code - approach with caution
+;; WARNING! psychotic code - approach with caution
 
 (defun mushy-eval (command-str caller)
 	(setf command-str (string-trim '(#\Space #\Tab #\Newline) command-str))
@@ -31,15 +31,6 @@
 (defun convert-head (head)
 	(format nil "^~a" head))
 
-(defun convert-optional (str)
-	(format nil "(?:~a)?" str))
-
-(defun convert-switch (list)
-	(format nil "(?:~{~a~^|~})" list))
-
-(defun cat-list (list)
-	(format nil "~{~a~}" list))
-
 (defun find-head (command)
 	(loop for c in *commands* do
 		(if (cl-ppcre:all-matches (convert-head (car c)) command)
@@ -47,15 +38,17 @@
 
 (defun convert-form (form)
 	(setf form (car form))
-	(let ((res "^"))
-		(loop for s in form do
-			(cond ((stringp s) (setf res (catstr res s)))
-					((symbolp s) (setf res (catstr res "(.+?)")))
-					((eq (car s) 'optional) (setf res
-						(catstr res (cat-list (mapcar #'convert-optional (cdr s))))))
-					((eq (car s) 'switch) (setf res
-						(catstr res (convert-switch (cdr s))))))) 
-		(format nil "~a$" res)))
+	(format nil "^~{~a~}$"
+		(loop for s in form collect (handle-elm s))))
+
+(defun handle-elm (elm)
+	(cond ((stringp elm) elm)
+			((symbolp elm) "(.+?)")
+			((eq (car elm) 'optional) 
+				(format nil "~{(?:~a)?~}" (mapcar #'handle-elm (cdr elm))))
+			((eq (car elm) 'switch) 
+				(format nil "(?:~{~a~^|~})" (mapcar #'handle-elm (cdr elm))))
+			(t (error "Invalid element in command declaration:~a" elm))))
 
 (defun collect-symbols (form)
 	(remove nil (mapcar (lambda (x) (if (symbolp x) x)) (car form))))

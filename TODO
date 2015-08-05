@@ -14,7 +14,7 @@ Todo
 	[✓] dispatcher
 	[ ] port old commands
 	[ ] defalias
-	[ ] nested modifiers
+	[✓] nested modifiers
 	
 [ ] helpfiles
 [ ] command permissions

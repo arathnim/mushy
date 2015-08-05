@@ -199,8 +199,8 @@
 		(set-symbol '*this* blk env)
 		(set-symbol '*caller* caller env)
 		(set-symbol '*args* args env)
- 		(soft-eval (attr blk attr) env)))
-		"No such attribute!  Go yell at Arathnim!")
+ 		(soft-eval (attr blk attr) env))
+		(format nil "No such attribute: '~a' on '~a'" attr (attr blk "name"))))
 
 (defun let-eval (caller this sexp)
  	(let ((*caller* caller) (*this* this)) (eval sexp)))
@@ -222,7 +222,7 @@
 	(defparameter barmaid (make-sys-blk (make-instance 'obj) "barmaid"))
 	(defparameter box (make-sys-blk (make-instance 'obj) "box"))
 	(defparameter apple (make-sys-blk (make-instance 'obj) "apple"))
-	(defparameter door (bind-exit "wooden-door" *tavern* *porch*))
+	(defparameter door (bind-exit "wooden door" *tavern* *porch*))
 
 	(push-flag box 'container)
 	(push-attrs box
