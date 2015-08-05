@@ -1,5 +1,6 @@
 (defcommand "test"
-	'(("test" (optional )) "Testing, testing, 1, 2, 3..."))
+	'(("test" (optional (" with value " val))) 
+		(if %val (catstr "val set : " %val) "Testing, testing, 1, 2, 3...")))
 
 (defcommand "ex"
 	'(("ex " target) (with-object obj %target (ex obj))))
@@ -14,11 +15,11 @@
 		(with-object container %container
 			(exec-attr container "container-desc" player nil)))
 	'(("look " (optional "at the " "at ") target)
-		(with-object target %target 
+		(with-object target %target
 			(exec-attr target "desc" player nil))))
 
 (defcommand "quit"
-	'(("quit") 
+	'(("quit")
 		(let ((socket (get-socket (attr player "name"))))
 			(usocket:socket-close socket))))
 
@@ -39,14 +40,14 @@
 
 (defcommand "say"
 	'(("say " message) 
-		(broadcast (format nil "[~a] ~a" (attr player "name") %message) 
+		(broadcast (format nil "[~a] ~a" (attr player "name") %message)
 			(above player)) ""))
 
 (defun ex (blk)
-	(format nil "Attributes~%~a~%Flags~%   ~a~%Above: ~a~%Subs:~%~{~a~%~}"
+	(format nil "Attributes~%~a~%Flags~%   ~a~%Above~%   ~a~%~%Subs~%   ~{~a~^, ~}"
 		(write-attrs (attrs blk))
 		(write-flags (flags blk))
-		(if (above blk) (attr (above blk) "name") nil) 
+		(if (above blk) (above blk) "none")
 		(get-sub-names blk)))
 
 (defun write-attrs (table)
@@ -56,8 +57,9 @@
 				(prin1-to-string (gethash key table))))))
 
 (defun write-flags (flags)
-	(format nil "~{~a~}~%"
-		(mapcar (lambda (x) (string-downcase (string x))) flags)))
+	(if (not flags) ""
+		(format nil "~{~a~}~%"
+			(mapcar (lambda (x) (string-downcase (string x))) flags))))
 
 (defun extern-place (args player)
   (let ((target (resolve-object (car args) player))

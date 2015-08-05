@@ -5,6 +5,9 @@
 	(above :initform nil :accessor above)
 	(id :type fixnum :initform (incf *next-id*) :accessor id)))
 
+(defmethod print-object ((block obj) stream)
+	(format stream "<obj #~a '~a'>" (id block) (attr block "name")))
+
 (defun attr (blk name)
 	(gethash name (attrs blk)))
 

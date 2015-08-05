@@ -51,7 +51,11 @@
 	(player (make-sys-blk (make-instance 'obj) username)))
 	 (push (list username password) *users*)
 	 (push (list username player) *players*)
-	 (push-sub *tavern* player)
+	 (push-sub (get-spawn *world*) player)
 	 (push-flag player 'proper-name)
 	 (stream-print (format nil "~a~%" "Account created.") socket)
 		(repl socket username player)))
+
+(defun wrap-to (string length)
+	(format nil (catstr "~{~<~%~1," length ":;~A~> ~}") 
+		(cl-ppcre:split " " string)))

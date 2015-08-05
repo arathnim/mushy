@@ -5,7 +5,7 @@
 
 ;; WARNING! psychotic code - approach with caution
 
-(defun mushy-eval (command-str caller)
+(defun mushy-eval (command-str &optional caller)
 	(setf command-str (string-trim '(#\Space #\Tab #\Newline) command-str))
 	(let* ((command (find-head command-str)) 
 			 (forms (cadr command))
@@ -17,7 +17,7 @@
 				(multiple-value-bind (a b) 
 					(cl-ppcre:scan-to-strings (convert-form f) command-str)
 						(if a (progn 
-							(setf matches b form f symbols (collect-symbols f))
+							(setf matches b form f symbols (collect-symbols (car f)))
 							(return-from outer nil))))))
 		(if (not form) (return-from mushy-eval 
 			"Can't match your command form, baka!"))
@@ -38,22 +38,31 @@
 
 (defun convert-form (form)
 	(setf form (car form))
-	(format nil "^~{~a~}$"
-		(loop for s in form collect (handle-elm s))))
+	(format nil "^~a$"
+		(build-regex form)))
 
-(defun handle-elm (elm)
-	(cond ((stringp elm) elm)
-			((symbolp elm) "(.+?)")
-			((eq (car elm) 'optional) 
-				(format nil "~{(?:~a)?~}" (mapcar #'handle-elm (cdr elm))))
-			((eq (car elm) 'switch) 
-				(format nil "(?:~{~a~^|~})" (mapcar #'handle-elm (cdr elm))))
-			(t (error "Invalid element in command declaration:~a" elm))))
+(defun build-regex (elt)
+	(cond ((stringp elt) elt)
+			((symbolp elt) "(.+?)")
+			((eq (car elt) 'optional) 
+				(format nil "~{(?:~a)?~}" (mapcar #'build-regex (cdr elt))))
+			((eq (car elt) 'switch) 
+				(format nil "(?:~{~a~^|~})" (mapcar #'build-regex (cdr elt))))
+			((listp elt) (format nil "~{~a~}" (mapcar #'build-regex elt)))
+			(t (error "Invalid element in command declaration:~a" elt))))
 
 (defun collect-symbols (form)
-	(remove nil (mapcar (lambda (x) (if (symbolp x) x)) (car form))))
+	(let ((res nil))
+		(cond ((listp form) 
+			(setf res (alexandria:flatten (mapcar #'collect-symbols form))))
+				((and (symbolp form) (not (eq form 'optional)) (not (eq form 'switch))) 
+					(setf res (push form res)))
+				(t nil)) res))
 
 (defmacro get- (sym) `(gethash ',sym matched-symbols))
+
+;; dubz!
+(defun double-quote-list (lst) (mapcar (lambda (x) ''x)) lst)
 
 ;; (let ((name (resolve-object val player))) (if name progn "error")) 
 (defmacro with-object (name val &rest form)
