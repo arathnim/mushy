@@ -21,6 +21,4 @@ command definition syntax
 		(("look") (xc-attr (above player) "desc" player))
 		(("look" " through " target-exit)
 			(let ((target (resolve-descriptor target-exit)))
-				(xc-attr target "desc" player)))
-		(("look" (switch " in " " into " " inside ") target-obj)
-			)
+				(xc-attr target "desc" player))))
