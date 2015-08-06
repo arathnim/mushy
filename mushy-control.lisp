@@ -61,10 +61,13 @@
 
 (defmacro get- (sym) `(gethash ',sym matched-symbols))
 
-;; dubz!
-(defun double-quote-list (lst) (mapcar (lambda (x) ''x)) lst)
+(defun quote-list (lst)
+	(mapcar (lambda (x) (car `(',x))) lst))
 
 ;; (let ((name (resolve-object val player))) (if name progn "error")) 
 (defmacro with-object (name val &rest form)
 	`(let ((,name (resolve-object ,val player)))
 		(if ,name (progn ,@form) (format nil "Unable to resolve \"~a\". ;_;" ,val))))
+
+(defmacro defcom (head &rest forms)
+	`(defcommand ,head ,@(quote-list forms)))
