@@ -15,24 +15,24 @@
 	(find flag (flags blk)))
 
 (defun push-attr (blk str sexp)
- 	(setf (gethash str (attrs blk)) sexp))
+	(setf (gethash str (attrs blk)) sexp))
 
 (defun push-attrs (blk &rest list)
-  (loop for x in list by #'cddr 
-		  for y in (cdr list) by #'cddr
-		  do (push-attr blk x y)))
+	(loop for x in list by #'cddr 
+			for y in (cdr list) by #'cddr
+			do (push-attr blk x y)))
 
 (defun push-attr-list (blk list)
-  (loop for x in list by #'cddr
-		  for y in (cdr list) by #'cddr
-		  do (push-attr blk x y)))
+	(loop for x in list by #'cddr
+			for y in (cdr list) by #'cddr
+			do (push-attr blk x y)))
 
 (defun push-flag (blk str)
 	(push str (flags blk)))
 
 (defun push-sub (blk blk2)
-  (push blk2 (subs blk))
-  (setf (above blk2) blk))
+	(push blk2 (subs blk))
+	(setf (above blk2) blk))
 
 (defun move-to (blk blk2)
 	(print `(,blk ,(above blk) ,(subs (above blk))))
@@ -40,15 +40,15 @@
 	(push-sub blk2 blk))
 
 (defun get-sub-names (blk)
-  (mapcar (lambda (x) (attr x "name")) (subs blk)))
+	(mapcar (lambda (x) (attr x "name")) (subs blk)))
 
 (defun add-flagged-list (flag block-list &rest name-list)
 	(loop for b in block-list do 
 		(add-flagged-subs flag b name-list)))
 
 (defun add-part (flag blk name num)
-  (loop repeat num do 
-  	(add-flagged-subs flag blk (list name))))
+	(loop repeat num do 
+		(add-flagged-subs flag blk (list name))))
 
 (defun compound-find (list name)
 	(let ((tmp nil)) 

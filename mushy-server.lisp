@@ -11,9 +11,10 @@
 	(force-output (usocket:socket-stream mushy-stream)))
 
 (defun start-server ()
-  (loop 
-	 (let ((socket (usocket:socket-accept mushy-socket))) 
-		(sb-thread:make-thread 'handle-connection :name "server-thread" :arguments socket))))
+  (loop (let ((socket (usocket:socket-accept mushy-socket))) 
+		(sb-thread:make-thread 'handle-connection 
+			:name "server-thread" 
+			:arguments socket))))
 
 (defun get-player (username)
   (cadr (assoc username *players* :test #'equalp)))
@@ -22,15 +23,18 @@
   (cadr (assoc username *sockets* :test #'equalp)))
 
 (defun repl (socket name player)
-  	(push (list name socket) *sockets*)
-	(loop (stream-print (format nil "~%~a~%"
-		(mushy-eval (stream-read socket) player)) socket)))
+	(push (list name socket) *sockets*)
+	(loop (stream-print
+		(format nil "~a~% >>> "
+		(string-trim '(#\Space #\Tab #\Newline)
+			(wrap-to 80 (format nil "~%~a~%"
+			(mushy-eval (stream-read socket) player))))) socket)))
 
 (defun login (socket cmd)
-  (let ((username (cadr cmd)) (password (caddr cmd)))
-  (if (equal password (cadr (assoc username *users* :test #'equalp)))
-	 (repl socket username (get-player username))
-	 (stream-print (format nil "~a~%" "incorrect user/pass.") socket))))
+	(let ((username (cadr cmd)) (password (caddr cmd)))
+	(if (equal password (cadr (assoc username *users* :test #'equalp)))
+		(repl socket username (get-player username))
+		(stream-print (format nil "~a~%" "incorrect user/pass.") socket))))
 
 (defun handle-connection (socket)
   	(let ((in (open "into-msg" :if-does-not-exist :create)))
@@ -56,6 +60,6 @@
 	 (stream-print (format nil "~a~%" "Account created.") socket)
 		(repl socket username player)))
 
-(defun wrap-to (string length)
+(defun wrap-to (length string)
 	(format nil (catstr "~{~<~%~1," length ":;~A~> ~}") 
 		(cl-ppcre:split " " string)))

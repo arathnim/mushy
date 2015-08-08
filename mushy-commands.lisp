@@ -44,11 +44,16 @@
 			(above player)) ""))
 
 (defcom "eval"
-	(("eval " exp) (soft-eval exp player)))
+	(("eval " exp) 
+		(soft-eval (read-from-string %exp))))
 
 (defcom "exec-attr"
 	(("exec-attr " object ":" attr) 
 		(with-object object %object (exec-attr object %attr player nil))))
+
+(defcom "syntax"
+	(("syntax " command) 
+		(format nil "~{~a~%~}" (mapcar #'car (cadr (find-head %command))))))
 
 (defun ex (blk)
 	(format nil "Attributes~%~a~%Flags~%   ~a~%Above~%   ~a~%~%Subs~%   ~{~a~^, ~}"
@@ -59,8 +64,8 @@
 
 (defun write-attrs (table)
 	(format nil "~{~a~}"
-		(loop for key being each hash-key of table collect 
-			(format nil "   ~a : ~a~%" key 
+		(loop for key being each hash-key of table collect
+			(format nil "   ~a : ~a~%" key
 				(prin1-to-string (gethash key table))))))
 
 (defun write-flags (flags)

@@ -31,6 +31,7 @@ Todo
 	[ ] add to existing commands
 [ ] object ownership
 [ ] multiple worlds
+	[ ] track world save locations
 [ ] world ownership
 [ ] configuration options, serverside
 [ ] documentation
