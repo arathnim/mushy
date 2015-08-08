@@ -4,8 +4,8 @@
 (defvar *caller* nil)
 (defvar *this* nil)
 
-(defun load-world ()
-	(let ((vals (cl-store:restore "worlddata")))
+(defun load-world (filename)
+	(let ((vals (cl-store:restore filename)))
 		(setq *world* (nth 0 vals) *next-id* (nth 1 vals) 
 		*users* (nth 2 vals) *players* (nth 3 vals))))
 
@@ -78,7 +78,7 @@
 	 (format nil "You see ~a~a" (build-name blk) (build-status blk)) ""))
 
 (defun build-name (blk)
-  (if (has-flag blk 'proper-name) 
+  (if (has-flag blk "proper-name") 
 	 (attr blk "name")
 	 (format nil "a ~a" (attr blk "name"))))
 

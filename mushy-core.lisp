@@ -12,9 +12,10 @@
 	(gethash name (attrs blk)))
 
 (defun has-flag (blk flag)
-	(find flag (flags blk)))
+	(find flag (flags blk) :test #'equalp))
 
 (defun push-attr (blk str sexp)
+	(declare (string str))
 	(setf (gethash str (attrs blk)) sexp))
 
 (defun push-attrs (blk &rest list)
@@ -28,6 +29,7 @@
 			do (push-attr blk x y)))
 
 (defun push-flag (blk str)
+	(declare (string str))
 	(push str (flags blk)))
 
 (defun push-sub (blk blk2)
@@ -35,9 +37,11 @@
 	(setf (above blk2) blk))
 
 (defun move-to (blk blk2)
-	(print `(,blk ,(above blk) ,(subs (above blk))))
 	(delete blk (subs (above blk)))
 	(push-sub blk2 blk))
+
+(defun delete-block (blk)
+	(delete blk (subs (above blk))))
 
 (defun get-sub-names (blk)
 	(mapcar (lambda (x) (attr x "name")) (subs blk)))

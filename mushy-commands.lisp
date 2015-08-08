@@ -55,6 +55,25 @@
 	(("syntax " command) 
 		(format nil "~{~a~%~}" (mapcar #'car (cadr (find-head %command))))))
 
+(defcom "create" 
+	(("create " object-name) 
+		(let ((obj (make-sys-blk (make-instance 'obj) %object-name)))
+			(push-sub (above player) obj))))
+
+(defcom "delete"
+	(("delete " object)
+		(with-object object %object (delete-block object))))
+
+(defcom "set" 
+	(("set " object ":" attr " " value)
+		(with-object object %object
+			(push-attr object %attr (read-from-string %value)))))
+
+(defcom "add-flag"
+	(("add-flag " object " " flag)
+		(with-object object %object
+			(push-flag object %flag))))
+
 (defun ex (blk)
 	(format nil "Attributes~%~a~%Flags~%   ~a~%Above~%   ~a~%~%Subs~%   ~{~a~^, ~}"
 		(write-attrs (attrs blk))
@@ -77,10 +96,6 @@
   (let ((target (resolve-object (car args) player))
 		  (container (resolve-object (cadr args) player)))
 	 (if (and target container) (put-into container target) "Can't see that here.")))
-
-(defun extern-set (args player)
-	(let ((target (find-sub (above player) (car args))))
-		(if target (set-attr (cdr args) target) "Can't see that here.")))
 
 (defun set-attr (args target)
 	(push-attr target (car args)

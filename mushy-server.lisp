@@ -56,7 +56,7 @@
 	 (push (list username password) *users*)
 	 (push (list username player) *players*)
 	 (push-sub (get-spawn *world*) player)
-	 (push-flag player 'proper-name)
+	 (push-flag player "proper-name")
 	 (stream-print (format nil "~a~%" "Account created.") socket)
 		(repl socket username player)))
 
