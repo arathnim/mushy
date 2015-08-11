@@ -8,22 +8,22 @@ Todo
 	[✓] regex
 	[✓] world interface (attr,etc.)
 	[ ] command interface (say,create,etc.)
-	[ ] common macros/special forms (if,cond,case,let)
+	[✓] common macros/special forms (if,cond,case,let)
 
 [ ] command definition
 	[✓] syntax
 	[✓] dispatcher
-	[ ] port old commands
+	[✓] port old commands
 	[ ] defalias
 	[✓] nested modifiers
 
-[ ] more options for resolve-object
-	[ ] aliases for 'here' and 'me'
+[✓] more options for resolve-object
+	[✓] aliases for 'here' and 'me'
 	[ ] sub-object absolute paths e.g. 'dog/leg/paw'
-	[ ] returns a list of matches
+	[✓] returns a list of matches
 
-[ ] better with-object
-	[ ] identifies multiple matches
+[✓] better with-object
+	[✓] identifies multiple matches
 
 [ ] helpfiles
 [ ] command permissions

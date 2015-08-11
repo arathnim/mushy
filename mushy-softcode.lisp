@@ -14,10 +14,11 @@
 				(s (find (car sexp) (env-special-forms env) :key #'car))
 				(m (find (car sexp) (env-macros env) :key #'car)))
 		(cond (s (apply (cadr s) (list (cdr sexp) env)))
-				(m (apply (cadr m) (cdr sexp)))
+				(m (soft-eval (apply (cadr m) (cdr sexp)) env))
 				(f (apply (cadr f)
 					(mapcar (lambda (x) (soft-eval x env)) (cdr sexp))))))
-		(cond ((or (numberp sexp) (stringp sexp)) sexp)
+		(cond ((eq sexp 't) 't)
+				((or (numberp sexp) (stringp sexp)) sexp)
 				((symbolp sexp) (gethash sexp (env-symbol-table env)))))))
 
 (defun add-fun (name func)
@@ -29,11 +30,14 @@
 (defun add-special-form (name func)
 	(push (list name func) (env-special-forms *default-env*)))
 
+(defun add-macro (name func)
+	(push (list name func) (env-macros *default-env*)))
+
 (defun set-symbol (name value env)
 	(setf (gethash name (env-symbol-table env)) value))
 
 ;; arithmetic and logic
-(add-fun-list '(+ - / * = < > /= eq eql equal equalp))
+(add-fun-list '(+ - / * = < > /= eq eql equal equalp not))
 
 ;; list functions
 (add-fun-list '(car cdr list list-length cons remove remove-if
@@ -71,3 +75,11 @@
 (add-special-form 'progn
 	(lambda (args env)
 		(car (last (mapcar (lambda (x) (soft-eval x env)) args)))))
+
+(add-special-form 'quote
+	(lambda (args env)
+		(car args)))
+
+(add-macro 'and
+	(lambda (head &rest rest)
+		(if rest `(if ,head (and ,@rest) nil) head)))

@@ -1,5 +1,5 @@
 (require "asdf")
-(ql:quickload '(split-sequence usocket cl-store alexandria cl-ppcre))
+(ql:quickload '(split-sequence usocket cl-store alexandria cl-ppcre anaphora))
 (declaim #+sbcl(sb-ext:muffle-conditions style-warning))
 (declaim #+sbcl(sb-ext:muffle-conditions warning))
 (setq *print-pretty* 'nil)

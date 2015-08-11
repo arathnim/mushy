@@ -25,10 +25,11 @@
 (defun repl (socket name player)
 	(push (list name socket) *sockets*)
 	(loop (stream-print
-		(format nil "~a~% >>> "
-		(string-trim '(#\Space #\Tab #\Newline)
-			(wrap-to 80 (format nil "~%~a~%"
-			(mushy-eval (stream-read socket) player))))) socket)))
+		(format nil "~a~%" 
+			(string-trim '(#\Space #\Tab #\Newline)
+			(wrap-to 80 (format nil "~a"
+				(mushy-eval (stream-read socket) player)))))
+		socket)))
 
 (defun login (socket cmd)
 	(let ((username (cadr cmd)) (password (caddr cmd)))
@@ -44,8 +45,9 @@
 		 	(stream-print (format nil "~a~%" line) socket)))
 		 (close in))
 	(loop 
-	(let* ((command (stream-read socket)) 
-		(cmd (split-sequence:SPLIT-SEQUENCE #\Space command))
+	(let* ((command (stream-read socket))
+		(print command)
+		(cmd (split-sequence:split-sequence #\Space command))
 		(head (car cmd)))
 		(if (equal head "login") (login socket cmd))
 		(if (equal head "create") (create socket cmd)))))

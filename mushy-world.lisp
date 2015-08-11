@@ -104,9 +104,22 @@
 	(let ((res nil))
 		(if (equalp name (attr blk "name"))
 		(push blk res))
- 	(loop for s in (subs blk) do 
-		  (if (rfind-all-subs s name) (push (rfind-sub s name) res)))
- 	res))
+	(loop for s in (subs blk) do 
+		(if (rfind-all-subs s name) (push (rfind-sub s name) res)))
+	(alexandria:flatten res)))
+
+(defun match-subs (blk name)
+	(let ((res nil))
+		(if (match-name name blk)
+		(push blk res))
+	(loop for s in (subs blk) do 
+		(if (match-subs s name) (push (match-subs s name) res)))
+	(alexandria:flatten res)))
+
+(defun match-name (str obj)
+	(if (or (equalp str (attr obj "name"))
+		 	  (member str (attr obj "alias") :test #'equalp))
+		obj nil))
 
 (defun make-exit (name blk target)
 	(let ((exit (make-sys-blk (make-instance 'obj) name)))
@@ -133,13 +146,15 @@
 	(mapcar #'(lambda (x) (push-sub blk (make-sys-blk 
 		(make-instance 'obj) (string-capitalize x)))) sub-names))
 
-(defun broadcast (msg room)
-	(loop for b in (subs room) 
-		do (send-msg msg b)))
+(defun broadcast (msg room sender)
+	(loop for b in (subs room)
+		do (send-msg msg b sender)))
 
-(defun send-msg (msg blk)
+(defun send-msg (msg blk sender)
 	(let ((socket (get-socket (attr blk "name"))))
-		(if socket (stream-print (format nil "~a" msg) socket))))
+		(if socket 
+			(stream-print (format nil "~a" msg) socket)
+			(exec-attr blk "listen-trig" sender (list msg)))))
 
 (defun rep (num sym)
 	(let ((lst nil)) (loop repeat num do (push sym lst)) lst))
@@ -213,7 +228,7 @@
 	(format nil "~{~a~}" rest))
 
 (defun get-spawn (world)
-  (find 'spawn world :key #'(lambda (x) (has-flag x 'spawn))))
+  (find 'spawn world :key (lambda (x) (has-flag x 'spawn))))
 
 (defun make-test-world ()
 	(defparameter *tavern* (make-sys-blk (make-room) "the foyer of the tavern"))

@@ -40,11 +40,11 @@
 
 (defcom "say"
 	(("say " message) 
-		(broadcast (format nil "[~a] ~a" (attr player "name") %message)
-			(above player)) ""))
+		(progn (broadcast (format nil "[~a] ~a" (attr player "name") %message)
+			(above player) player) "")))
 
 (defcom "eval"
-	(("eval " exp) 
+	(("eval " exp)
 		(soft-eval (read-from-string %exp))))
 
 (defcom "exec-attr"
@@ -74,6 +74,12 @@
 		(with-object object %object
 			(push-flag object %flag))))
 
+(defcom "place"
+	(("place " target " into " container)
+		(with-object target %target
+		(with-object container %container
+			(put-into container target)))))
+
 (defun ex (blk)
 	(format nil "Attributes~%~a~%Flags~%   ~a~%Above~%   ~a~%~%Subs~%   ~{~a~^, ~}"
 		(write-attrs (attrs blk))
@@ -92,17 +98,9 @@
 		(format nil "~{~a~}~%"
 			(mapcar (lambda (x) (string-downcase (string x))) flags))))
 
-(defun extern-place (args player)
-  (let ((target (resolve-object (car args) player))
-		  (container (resolve-object (cadr args) player)))
-	 (if (and target container) (put-into container target) "Can't see that here.")))
-
-(defun set-attr (args target)
-	(push-attr target (car args)
-		(read-from-string (format nil "~{~a~^ ~}" (cdr args))))
-	"Attribute set.")
-
 (defun resolve-object (str player)
-	(if (equalp str "here") (return-from resolve-object (above player)))
-	(if (equalp str "me") (return-from resolve-object player))
-	(find-sub (above player) str))
+	(if (member str '("here" "around") :test #'equalp) 
+		(return-from resolve-object (list (above player))))
+	(if (member str '("me" "my") :test #'equalp) 
+		(return-from resolve-object (list player)))
+	(rfind-all-subs (above player) str))

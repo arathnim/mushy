@@ -20,7 +20,7 @@
 							(setf matches b form f symbols (collect-symbols (car f)))
 							(return-from outer nil))))))
 		(if (not form) (return-from mushy-eval 
-			"Can't match your command form, baka!"))
+			"Can't match your command form."))
 		(if (and symbols (not (equalp matches #()))) 
 			(loop for s in symbols for m across matches do
 			(setf (gethash s matched-symbols) m)))
@@ -67,7 +67,10 @@
 ;; (let ((name (resolve-object val player))) (if name progn "error")) 
 (defmacro with-object (name val &rest form)
 	`(let ((,name (resolve-object ,val player)))
-		(if ,name (progn ,@form) (format nil "Unable to resolve \"~a\". ;_;" ,val))))
+		(if (eql (list-length ,name) 1) 
+			(progn (setf ,name (car ,name)) ,@form) 
+			(format nil "Unable to resolve \"~a\".~{~%   ~a~}" ,val ,name))))
 
 (defmacro defcom (head &rest forms)
 	`(defcommand ,head ,@(quote-list forms)))
+
