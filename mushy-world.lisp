@@ -35,7 +35,7 @@
 
 (defun make-wall (name blk) 
 	(let ((wall (make-instance 'obj))) 
-		(progn (push-flag wall 'wall) (push-attr wall "name" name)
+		(progn (push-flag wall "wall") (push-attr wall "name" name)
 			(push-sub blk wall) (push-attr wall "vis" 2) wall)))
 
 (defun name (blk)
@@ -123,7 +123,7 @@
 
 (defun make-exit (name blk target)
 	(let ((exit (make-sys-blk (make-instance 'obj) name)))
-		(push-flag exit 'exit)
+		(push-flag exit "exit")
 		(push-sub blk exit)
 		(push-attr exit "target" target)
 		exit))
@@ -224,6 +224,12 @@
 	(progn (if (attr blk "tick") (exec-attr blk "tick" nil nil)) 
 		(mapc #'tick (subs blk))))
 
+(defun delay-exec (s exp)
+	(sb-thread:make-thread 
+		(lambda () 
+			(sleep s)
+			(eval exp))) nil)
+
 (defun catstr (&rest rest)
 	(format nil "~{~a~}" rest))
 
@@ -239,7 +245,7 @@
 	(defparameter apple (make-sys-blk (make-instance 'obj) "apple"))
 	(defparameter door (bind-exit "wooden door" *tavern* *porch*))
 
-	(push-flag box 'container)
+	(push-flag box "container")
 	(push-attrs box
 		"capacity" '(200 300))
 
@@ -249,6 +255,8 @@
 
 	(push-attr dog "status" "wagging his tail")
 	(apply-template dog '(dog))
+	(push-attr dog "listen-trig" nil)
+
 	(push-attr barmaid "status" "washing glasses behind the bar")
 	
 	(push-flag *tavern* 'spawn)

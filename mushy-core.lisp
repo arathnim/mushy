@@ -29,7 +29,7 @@
 			do (push-attr blk x y)))
 
 (defun push-flag (blk str)
-	(declare (string str))
+	(if (symbolp str) (setf str (string str)))
 	(push str (flags blk)))
 
 (defun push-sub (blk blk2)

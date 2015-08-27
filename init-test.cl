@@ -15,5 +15,5 @@
 (sb-thread:make-thread 'ticker :name "ticker")
 (sb-thread:make-thread 'start-server :name "server")
 (load-material (directory "data/materials/*.*"))
-;;(make-test-world)
-(load-world "save1.sav")
+(make-test-world)
+;;(load-world "save1.sav")
