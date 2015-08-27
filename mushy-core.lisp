@@ -12,6 +12,7 @@
 	(gethash name (attrs blk)))
 
 (defun has-flag (blk flag)
+	(if (symbolp flag) (setf flag (string flag)))
 	(find flag (flags blk) :test #'equalp))
 
 (defun push-attr (blk str sexp)
