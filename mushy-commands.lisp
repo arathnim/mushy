@@ -40,7 +40,7 @@
 
 (defcom "say"
 	(("say " message) 
-		(progn (broadcast (format nil "[~a] ~a" (attr player "name") %message)
+	 (progn (broadcast (format nil "[~a] ~a" (attr player "name" %message))
 			(above player) player) "")))
 
 (defcom "eval"

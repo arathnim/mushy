@@ -1,6 +1,14 @@
+(defvar *next-id* 0)
+(defparameter *world* nil)
+(defvar *this* nil)
+(defvar *caller* nil)
+
 (defclass obj () (
 	(sub-blocks :initform nil :accessor subs)
+	;; name -> sexp
 	(attributes :initform (make-hash-table :test #'equalp) :accessor attrs)
+	;; name -> "(defun name lambda-list body)"
+	(methods :initform (make-hash-table :test #'equalp) :accessor methods)
 	(flags :initform nil :accessor flags)
 	(above :initform nil :accessor above)
 	(id :type fixnum :initform (incf *next-id*) :accessor id)))
@@ -63,3 +71,198 @@
 
 (defun push-to-attr (blk sexp name)
 	(push sexp (gethash name (attrs blk))))
+
+;;;; higher level stuff
+
+(defun load-world (filename)
+	(let ((vals (cl-store:restore filename)))
+		(setq *world* (first vals) *next-id* (second vals) 
+		*users* (third vals))))
+
+(defun build-object-string (blk)
+  (if (eql (attr blk "vis") 0) 
+	 (format nil "You see ~a~a" (build-name blk) (build-status blk)) ""))
+
+(defun build-name (blk)
+  (if (has-flag blk "proper-name") 
+	 (attr blk "name")
+	 (format nil "a ~a" (attr blk "name"))))
+
+(defun build-status (blk)
+  (if (attr blk "status")
+	 (format nil ", ~a." (attr blk "status"))
+	 "."))
+
+(defun room-default-desc (caller this)
+	(format nil "~a~%==========================~%~a ~{~a ~}" 
+		(string-capitalize (attr this "name")) 
+		(attr this "room-desc")
+		(remove nil (gather-sdesc caller (subs this)))))
+
+(defun gather-sdesc (caller subs)
+	(loop for s in subs collect 
+		(let-eval caller s (attr s "sdesc"))))
+
+(defun object-default-sdesc (caller this)
+  (build-object-string this))
+
+(defun rfind-all-subs (blk name)
+	(let ((res nil))
+		(if (equalp name (attr blk "name"))
+		(push blk res))
+	(loop for s in (subs blk) do 
+		(if (rfind-all-subs s name) (push (rfind-sub s name) res)))
+	(alexandria:flatten res)))
+
+(defun match-subs (blk name)
+	(let ((res nil))
+		(if (match-name name blk)
+		(push blk res))
+	(loop for s in (subs blk) do 
+		(if (match-subs s name) (push (match-subs s name) res)))
+	(alexandria:flatten res)))
+
+(defun match-name (str obj)
+	(if (or (equalp str (attr obj "name"))
+		 	  (member str (attr obj "alias") :test #'equalp))
+		obj nil))
+
+(defun make-exit (name blk target)
+	(let ((exit (make-sys-blk (make-instance 'obj) name)))
+		(push-flag exit "exit")
+		(push-sub blk exit)
+		(push-attr exit "target" target)
+		exit))
+
+(defun make-room ()
+	(let ((blk (make-instance 'obj)))
+		(mapc (lambda (x) (make-wall x blk))
+		'("west wall" "east wall" "north wall" "south wall" "floor" "ceiling")) 
+		(push-attr blk "desc" '(room-default-desc *caller* *this*)) 
+		(push blk *world*) blk))
+
+(defun make-sys-blk (blk name)
+	(push-attrs blk 
+		"name" name
+		"sdesc" '(object-default-sdesc *caller* *this*)
+		"vis" 0)
+	blk)
+
+(defun add-subs (blk sub-names)
+	(mapcar #'(lambda (x) (push-sub blk (make-sys-blk 
+		(make-instance 'obj) (string-capitalize x)))) sub-names))
+
+(defun broadcast (msg room sender)
+	(loop for b in (subs room)
+		do (send-msg msg b sender)))
+
+(defun send-msg (msg blk sender)
+	(let ((socket (get-socket (attr blk "name"))))
+		(if socket 
+			(stream-print (format nil "~a" msg) socket)
+			(exec-attr blk "listen-trig" sender (list msg)))))
+
+(defun rep (num sym)
+	(let ((lst nil)) (loop repeat num do (push sym lst)) lst))
+
+(defun push-parts (&rest rest)
+	(let* ((blocks nil) (subs nil) (flags nil) (attrs nil) (material nil) (current "blocks"))
+		(declare (special blocks) (special subs) (special flags) (special attrs) (special material))
+		(loop for r in rest do
+			(if (symbolp r)
+				(setq current (string r))
+				(push r (symbol-value (find-symbol (string-upcase current))))))
+		(setq blocks (alexandria:flatten blocks))
+		(setq subs (alexandria:flatten subs))
+		(setq subs (rep-string-list subs))
+		(setq attrs (reverse attrs))
+		(setq flags (loop for f in flags collect (intern (string-upcase f))))
+		(loop for b in blocks do 
+			(push-parts-backend b flags subs attrs material))))
+
+(defun push-parts-backend (blk flags sub-list attrs material)
+	(mapcar (lambda (x) 
+		(let ((sub (make-sys-blk (make-instance 'obj) (string-capitalize x)))) 
+			(push-sub blk sub)
+			(push-attr-list sub attrs)
+			(push-attr sub "material" (get-material (car material)))
+			(loop for f in flags do (push-flag sub f)))) 
+	sub-list))
+
+(defun rep-string-list (llist)
+	(setq llist (append llist '("")))
+	(alexandria:flatten 
+	(loop for x in llist by #'cdr
+			for y in (cdr llist) by #'cdr collect
+				(cond ((numberp x) (rep (- x 1) y))
+					(t x)))))
+(defun find-subs (blk &rest subs)
+	(setq subs (alexandria:flatten subs))
+	(alexandria:flatten (mapcar #'(lambda (x) (rfind-sub blk x)) subs)))
+
+(defun bind-exit (name room room2)
+	(make-exit name room room2)
+	(make-exit name room2 room))
+
+(defun ticker ()
+  (loop (progn (loop for r in *world* do (tick r)) (sleep 5))))
+
+(defun exec-attr (blk attr caller args)
+	(if (attr blk attr)
+	(let ((env *default-env*))
+		(set-symbol '*this* blk env)
+		(set-symbol '*caller* caller env)
+		(set-symbol '*args* args env)
+ 		(soft-eval (attr blk attr) env))
+		(format nil "No such attribute: '~a' on '~a'" attr (attr blk "name"))))
+
+(defun let-eval (caller this sexp)
+ 	(let ((*caller* caller) (*this* this)) (eval sexp)))
+
+(defun tick (blk)
+	(progn (if (attr blk "tick") (exec-attr blk "tick" nil nil)) 
+		(mapc #'tick (subs blk))))
+
+(defun delay-exec (s exp)
+	(sb-thread:make-thread 
+		(lambda () 
+			(sleep s)
+			(eval exp))) nil)
+
+(defun catstr (&rest rest)
+	(format nil "~{~a~}" rest))
+
+(defun get-spawn (world)
+	(loop for r in world do 
+		(if (has-flag r "spawn") (return-from get-spawn r)))
+	nil)
+
+(defun make-test-world ()
+	(defparameter *tavern* (make-sys-blk (make-room) "the foyer of the tavern"))
+	(defparameter *porch* (make-sys-blk (make-room) "the porch of the tavern"))
+	(defparameter dog (make-sys-blk (make-instance 'obj) "dog"))
+	(defparameter barmaid (make-sys-blk (make-instance 'obj) "barmaid"))
+	(defparameter box (make-sys-blk (make-instance 'obj) "box"))
+	(defparameter apple (make-sys-blk (make-instance 'obj) "apple"))
+	(defparameter door (bind-exit "wooden door" *tavern* *porch*))
+
+	(push-flag box "container")
+	(push-attrs box
+		"capacity" '(200 300))
+
+	(push-attrs apple
+		"desc" "A medium-sized red apple."
+		"weight" 0.3)
+
+	(push-attr dog "status" "wagging his tail")
+	(apply-template dog '(dog))
+	(push-attr dog "listen-trig" nil)
+
+	(push-attr barmaid "status" "washing glasses behind the bar")
+	
+	(push-flag *tavern* 'spawn)
+	(push-attr *tavern* "room-desc" "The inn is lit by a small fire in the hearth, casting a warm light over the various tables and chairs in the room.")
+
+	(mapcar (lambda (x) (push-sub *tavern* x)) (list dog barmaid box apple))
+
+	(push-attr *porch* "room-desc" "You stand on the small wooden porch of the inn."))
