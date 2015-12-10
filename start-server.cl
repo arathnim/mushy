@@ -28,11 +28,12 @@
 (load "server-config.cl")
 
 ;; load core systems
-(load "mushy-core.lisp")
-(load "mushy-modules.lisp")
-(load "mushy-softcode.lisp")
-(load "mushy-control.lisp")
-(load "mushy-commands.lisp")
+(load "core.cl")
+(load "modules.cl")
+(load "softcode.cl")
+(load "control.cl")
+(load "commands.cl")
+(load "server.cl")
 
 ;; load all modules
 (load-modules (directory "modules/*.cl"))
@@ -43,11 +44,11 @@
 ;; load world objects
 (cond
    (*test-mode* (make-test-world))
-	(*world-name* (load-world (format nil *world-name* ".world"))))
+	(*world-name* 
+		(if (probe-file (format nil *world-name* ".world")) 
+			(load-world (format nil *world-name* ".world"))
+			(make-blank-world))))
 
 ;; start server
 (sb-thread:make-thread 'ticker :name "ticker")
 (sb-thread:make-thread 'start-server :name "server")
-
-;(load-material (directory "data/materials/*.*"))
-;(make-test-world)

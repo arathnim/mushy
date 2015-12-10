@@ -74,12 +74,6 @@
 		(with-object object %object
 			(push-flag object %flag))))
 
-(defcom "place"
-	(("place " target " into " container)
-		(with-object target %target
-		(with-object container %container
-			(put-into container target)))))
-
 (defun ex (blk)
 	(format nil "Attributes~%~a~%Flags~%   ~a~%Above~%   ~a~%~%Subs~%   ~{~a~^, ~}"
 		(write-attrs (attrs blk))

@@ -74,6 +74,22 @@
 
 ;;;; higher level stuff
 
+(defun read-all-lines (loc)
+	(let ((in (open loc :if-does-not-exist :create)) (msg nil))
+		(when in
+		(loop for line = (read in nil)
+			while line do 
+			(setq msg (append msg (list line))))
+		(close in)) msg))
+
+(defun make-wall (name blk) 
+	(let ((wall (make-instance 'obj))) 
+		(progn (push-flag wall "wall") (push-attr wall "name" name)
+			(push-sub blk wall) (push-attr wall "vis" 2) wall)))
+
+(defun name (blk)
+	(attr blk "name"))
+
 (defun load-world (filename)
 	(let ((vals (cl-store:restore filename)))
 		(setq *world* (first vals) *next-id* (second vals) 
@@ -165,44 +181,20 @@
 (defun rep (num sym)
 	(let ((lst nil)) (loop repeat num do (push sym lst)) lst))
 
-(defun push-parts (&rest rest)
-	(let* ((blocks nil) (subs nil) (flags nil) (attrs nil) (material nil) (current "blocks"))
-		(declare (special blocks) (special subs) (special flags) (special attrs) (special material))
-		(loop for r in rest do
-			(if (symbolp r)
-				(setq current (string r))
-				(push r (symbol-value (find-symbol (string-upcase current))))))
-		(setq blocks (alexandria:flatten blocks))
-		(setq subs (alexandria:flatten subs))
-		(setq subs (rep-string-list subs))
-		(setq attrs (reverse attrs))
-		(setq flags (loop for f in flags collect (intern (string-upcase f))))
-		(loop for b in blocks do 
-			(push-parts-backend b flags subs attrs material))))
-
-(defun push-parts-backend (blk flags sub-list attrs material)
-	(mapcar (lambda (x) 
-		(let ((sub (make-sys-blk (make-instance 'obj) (string-capitalize x)))) 
-			(push-sub blk sub)
-			(push-attr-list sub attrs)
-			(push-attr sub "material" (get-material (car material)))
-			(loop for f in flags do (push-flag sub f)))) 
-	sub-list))
-
-(defun rep-string-list (llist)
-	(setq llist (append llist '("")))
-	(alexandria:flatten 
-	(loop for x in llist by #'cdr
-			for y in (cdr llist) by #'cdr collect
-				(cond ((numberp x) (rep (- x 1) y))
-					(t x)))))
-(defun find-subs (blk &rest subs)
-	(setq subs (alexandria:flatten subs))
-	(alexandria:flatten (mapcar #'(lambda (x) (rfind-sub blk x)) subs)))
-
 (defun bind-exit (name room room2)
 	(make-exit name room room2)
 	(make-exit name room2 room))
+
+(defun find-sub (blk name)
+  (find name (subs blk) :test #'equalp :key #'(lambda (x) (attr x "name"))))
+
+(defun rfind-sub (blk name)
+	(let ((res nil))
+		(if (equalp name (attr blk "name"))
+		(setq res blk))
+ 	(loop for s in (subs blk) do 
+		  (if (rfind-sub s name) (setq res (rfind-sub s name))))
+ 	res))
 
 (defun ticker ()
   (loop (progn (loop for r in *world* do (tick r)) (sleep 5))))
@@ -236,6 +228,11 @@
 	(loop for r in world do 
 		(if (has-flag r "spawn") (return-from get-spawn r)))
 	nil)
+
+(defun make-blank-world ()
+	(defparameter *spawn* (make-sys-blk (make-room) "the void"))
+	(push-flag *spawn* 'spawn)
+	(push-attr *spawn* "room-desc" "You float in the endless void."))
 
 (defun make-test-world ()
 	(defparameter *tavern* (make-sys-blk (make-room) "the foyer of the tavern"))
