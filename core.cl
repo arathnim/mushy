@@ -1,26 +1,41 @@
+;; (authors *this-code*) => 
+;;	  ((:name "arathnim" :email "Arathnim@gmail.com")
+;;	   (:name "lyk")
+;;    (:name "winny"))
+
+(proclaim '(optimize (speed 0) (safety 3) (debug 3) (space 0)))
+
+(declaim #+sbcl(sb-ext:muffle-conditions style-warning))
+
+(ql:quickload '(alexandria iterate anaphora parmesan cl-store dynamic-classes) :silent t)
+
+(defpackage mushy
+	(:shadowing-import-from dynamic-classes defclass make-instance)
+   (:use cl alexandria iterate anaphora parmesan cl-store))
+
+(in-package mushy)
+
 (defvar *next-id* 0)
 (defparameter *world* nil)
-(defvar *this* nil)
-(defvar *caller* nil)
 
-(defclass obj () (
-	(sub-blocks :initform nil :accessor subs)
-	;; name -> sexp
-	(attributes :initform (make-hash-table :test #'equalp) :accessor attrs)
-	;; name -> "(defun name lambda-list body)"
-	(methods :initform (make-hash-table :test #'equalp) :accessor methods)
-	(flags :initform nil :accessor flags)
-	(above :initform nil :accessor above)
-	(id :type fixnum :initform (incf *next-id*) :accessor id)))
-
-(defmethod print-object ((block obj) stream)
-	(format stream "<obj #~a '~a'>" (id block) (attr block "name")))
+(defclass obj ()
+	(above nil)
+	(sub-blocks nil)
+	(attributes (make-hash-table :test #'equalp))
+	(methods (make-hash-table :test #'equalp))
+	(flags nil)
+	(id (incf *next-id*) :type fixnum)
+	
+	(print-object (*this* stream)
+		(format stream "<obj #~a '~a'>" (id block) (attr block "name"))))
 
 (defun attr (blk name)
 	(gethash name (attrs blk)))
 
-(defun has-flag (blk flag)
-	(if (symbolp flag) (setf flag (string flag)))
+(defun (setf attr) (value)
+	(setf ))
+
+(defun has-flag? (blk flag)
 	(find flag (flags blk) :test #'equalp))
 
 (defun push-attr (blk str sexp)
